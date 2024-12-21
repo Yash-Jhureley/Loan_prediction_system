@@ -54,7 +54,7 @@ if st.button("Predict"):
                           'Property_Area': {'Rural': 0, 'Semiurban': 1, 'Urban': 2},
                           'Education': {'Graduate': 1, 'Not Graduate': 0},
                           'Credit_History': {'No': 0, 'Yes': 1}}, inplace=True)
-        input_df['Dependents'] = input_df['Dependents'].replace('3+', 4)
+        input_df['Dependents'] = input_df['Dependents'].replace('3+', 3)
 
         # Debugging: Check the input DataFrame
         st.write("Input Data for Prediction:")
@@ -64,14 +64,16 @@ if st.button("Predict"):
         try:
             prediction = model.predict(input_df)
 
+            # Debugging: Show the raw prediction output
+            st.write("Raw Prediction Output:", prediction)
+
             # Display the prediction result
             if prediction[0] == 1:
                 st.success("Loan Approved")
-            else:
+            elif prediction[0]==0:
                 st.error("Loan Rejected")
 
-            # Debugging: Show the raw prediction output
-            st.write("Raw Prediction Output:", prediction)
+            
 
         except Exception as e:
             st.error(f"An error occurred during prediction: {e}")

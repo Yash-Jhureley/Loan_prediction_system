@@ -1,52 +1,50 @@
-# train_model.py
-import numpy as np
+# Import necessary libraries
 import pandas as pd
-import joblib
 from sklearn.model_selection import train_test_split
-from sklearn import svm
+from sklearn.preprocessing import LabelEncoder
+from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
 # Load the dataset
-loan_dataset = pd.read_csv('dataset.csv')  # Update the path to your dataset
+data = pd.read_csv('dataset.csv')
 
+# Step 1: Handle Missing Values
 # Check for missing values
-missing_values_count = loan_dataset.isnull().sum().sum()
-if missing_values_count > 0:
-    print(f"Dataset contains {missing_values_count} missing values. Removing rows with missing values.")
-    loan_dataset.dropna(inplace=True)
-    print(f"Rows after removing missing values: {loan_dataset.shape[0]}")
+print("Missing values in each column:")
+print(data.isnull().sum())
 
-# Data preprocessing
-loan_dataset.replace({"Loan_Status": {'N': 0, 'Y': 1}}, inplace=True)
-loan_dataset = loan_dataset.replace(to_replace='3+', value=4)
+# Remove rows with missing values
+data.dropna(inplace=True)
 
-# Handle categorical variables
-loan_dataset.replace({'Married': {'No': 0, 'Yes': 1},
-                      'Gender': {'Male': 1, 'Female': 0},
-                      'Self_Employed': {'No': 0, 'Yes': 1},
-                      'Property_Area': {'Rural': 0, 'Semiurban': 1, 'Urban': 2},
-                      'Education': {'Graduate': 1, 'Not Graduate': 0}}, inplace=True)
+# Verify that there are no missing values left
+print("Missing values after dropping rows:")
+print(data.isnull().sum())
 
-# Separating the features and the target variable
-X = loan_dataset.drop(columns=['Loan_ID', 'Loan_Status'], axis=1)
-Y = loan_dataset['Loan_Status']
+# Step 2: Encode Categorical Variables
+# Convert categorical variables to numerical using Label Encoding
+label_encoder = LabelEncoder()
+data['Gender'] = label_encoder.fit_transform(data['Gender'])
+data['Married'] = label_encoder.fit_transform(data['Married'])
+data['Education'] = label_encoder.fit_transform(data['Education'])
+data['Self_Employed'] = label_encoder.fit_transform(data['Self_Employed'])
+data['Credit_History'] = label_encoder.fit_transform(data['Credit_History'])
+data['Property_Area'] = label_encoder.fit_transform(data['Property_Area'])
+data['Dependents'] = data['Dependents'].replace('3+', 4)  # Convert '3+' to 4
 
-# Splitting the dataset into training and testing sets
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.1, stratify=Y, random_state=2)
+# Step 3: Prepare Data for Training
+# Define features and target variable
+X = data.drop(columns=['Loan_Status'])
+y = data['Loan_Status']
 
-# Training the Support Vector Machine model
-classifier = svm.SVC(kernel='linear')
-classifier.fit(X_train, Y_train)
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Model evaluation
-X_train_prediction = classifier.predict(X_train)
-training_data_accuracy = accuracy_score(X_train_prediction, Y_train)
-print('Accuracy on training data: ', training_data_accuracy)
+# Step 4: Train the Model
+model = SVC()
+model.fit(X_train, y_train)
 
-X_test_prediction = classifier.predict(X_test)
-test_data_accuracy = accuracy_score(X_test_prediction, Y_test)
-print('Accuracy on test data: ', test_data_accuracy)
+# Step 5: Make Predictions and Evaluate the Model
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
 
-# Save the trained model using joblib
-joblib.dump(classifier, 'loan_model.pkl')
-print("Model saved as loan_model.pkl")
+print(f"Accuracy of the SVM model: {accuracy * 100:.2f}%")
